@@ -62,7 +62,7 @@
       display: block;
       max-width: 100%;
       height: auto;
-      touch-action: none; /* ✅ Prevents page scrolling during swipe */
+      touch-action: none; /* ✅ Prevents scroll during swipe */
     }
     #ui {
       margin-top: 15px;
@@ -124,6 +124,38 @@
       border: 2px solid #415a77;
       box-shadow: 0px 0px 12px rgba(0,0,0,0.4);
     }
+
+    /* 📱 Mobile Responsive */
+    @media (max-width: 768px) {
+      .game-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+      }
+
+      canvas {
+        width: 95vw;
+        height: auto;
+      }
+
+      .side-box, .side-panel {
+        width: 90%;
+        text-align: center;
+        font-size: 12px;
+      }
+
+      #ui button {
+        font-size: 18px;
+        padding: 12px 24px;
+        width: 90%;
+        max-width: 250px;
+      }
+
+      #score {
+        font-size: 18px;
+        padding: 10px 15px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -175,8 +207,8 @@
     const restartBtn = document.getElementById("restartBtn");
 
     const gridSize = 25;
-    const cols = canvas.width / gridSize;
-    const rows = canvas.height / gridSize;
+    let cols = canvas.width / gridSize;
+    let rows = canvas.height / gridSize;
 
     let snake, direction, nextDirection, food, score, gameInterval, gameRunning, speed;
 
@@ -194,6 +226,21 @@
     let key = null;
     let keyVisible = false;
     let keyTimer, keySpawnTimer;
+
+    // 📱 Responsive canvas size
+    function resizeCanvas() {
+      if (window.innerWidth < 768) {
+        canvas.width = Math.floor(window.innerWidth * 0.9);
+        canvas.height = Math.floor(window.innerHeight * 0.5);
+      } else {
+        canvas.width = 600;
+        canvas.height = 400;
+      }
+      cols = canvas.width / gridSize;
+      rows = canvas.height / gridSize;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
 
     function resetGame() {
       snake = [{ x: 5, y: 5 }];
