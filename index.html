@@ -10,7 +10,7 @@
       padding: 0;
       width: 100%;
       height: 100%;
-      overflow: hidden; /* 🚫 removes both horizontal & vertical scroll */
+      overflow: hidden;
       font-family: Arial, sans-serif;
     }
     body {
@@ -50,7 +50,7 @@
       justify-content: center;
       gap: 20px;
       margin-top: 10px;
-      flex-wrap: wrap; /* ✅ allows wrapping on smaller screens */
+      flex-wrap: wrap;
       max-width: 100%;
     }
     canvas {
@@ -60,8 +60,9 @@
       box-shadow: 0px 0px 25px rgba(0, 0, 0, 0.6),
                   0px 0px 50px rgba(65, 90, 119, 0.4) inset;
       display: block;
-      max-width: 100%; /* ✅ keep canvas inside viewport */
+      max-width: 100%;
       height: auto;
+      touch-action: none; /* ✅ Prevents page scrolling during swipe */
     }
     #ui {
       margin-top: 15px;
@@ -131,19 +132,17 @@
   <h2>BY: TOMATO MAN</h2>
 
   <div class="game-container">
-    <!-- Left: Controls -->
     <div class="side-box">
       <h3>🎮 Controls</h3>
       ↑ / W = Up<br>
       ↓ / S = Down<br>
       ← / A = Left<br>
-      → / D = Right
+      → / D = Right<br>
+      👆 Swipe = Mobile
     </div>
 
-    <!-- Center: Game -->
     <canvas id="gameCanvas" width="600" height="400"></canvas>
 
-    <!-- Right: Rules + Tomato Man -->
     <div class="side-panel">
       <div class="side-box">
         <h3>📜 Rules</h3>
@@ -294,8 +293,6 @@
         score++;
         scoreEl.textContent = "Score: " + score;
         placeFood();
-
-        // ✅ balanced speed-up
         speed = Math.max(80, 150 - score * 3);
         clearInterval(gameInterval);
         gameInterval = setInterval(gameLoop, speed);
@@ -363,6 +360,7 @@
       resumeBtn.style.display = "none";
     }
 
+    // Keyboard controls
     document.addEventListener("keydown", (e) => {
       const key = e.key.toLowerCase();
       if ((key === "arrowup" || key === "w") && direction.y !== 1) nextDirection = { x: 0, y: -1 };
@@ -371,6 +369,37 @@
       if ((key === "arrowright" || key === "d") && direction.x !== -1) nextDirection = { x: 1, y: 0 };
     });
 
+    // ✅ Mobile swipe detection
+    let touchStartX = 0, touchStartY = 0;
+    let touchEndX = 0, touchEndY = 0;
+
+    canvas.addEventListener("touchstart", (e) => {
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+    });
+
+    canvas.addEventListener("touchend", (e) => {
+      const touch = e.changedTouches[0];
+      touchEndX = touch.clientX;
+      touchEndY = touch.clientY;
+      handleSwipe();
+    });
+
+    function handleSwipe() {
+      const dx = touchEndX - touchStartX;
+      const dy = touchEndY - touchStartY;
+
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 30 && direction.x !== -1) nextDirection = { x: 1, y: 0 }; // Right
+        if (dx < -30 && direction.x !== 1) nextDirection = { x: -1, y: 0 }; // Left
+      } else {
+        if (dy > 30 && direction.y !== -1) nextDirection = { x: 0, y: 1 }; // Down
+        if (dy < -30 && direction.y !== 1) nextDirection = { x: 0, y: -1 }; // Up
+      }
+    }
+
+    // Buttons
     startBtn.addEventListener("click", startGame);
     pauseBtn.addEventListener("click", pauseGame);
     resumeBtn.addEventListener("click", resumeGame);
