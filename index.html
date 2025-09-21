@@ -179,7 +179,7 @@
       <div class="side-box">
         <h3>📜 Rules</h3>
         🥜 Eat acorns = +1<br>
-        🔑 Grab key = +5<br>
+        🔑 Grab key = +10<br>
         ❌ Don’t hit yourself<br>
         ⏩ Snake speeds up slowly<br>
         🌍 Wrap around edges
@@ -344,7 +344,7 @@
         clearInterval(gameInterval);
         gameInterval = setInterval(gameLoop, speed);
       } else if (keyVisible && key && head.x === key.x && head.y === key.y) {
-        score += 5;
+        score += 10; // ✅ updated from 5 to 10
         scoreEl.textContent = "Score: " + score;
         removeKey();
       } else {
