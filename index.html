@@ -460,12 +460,19 @@
       // ADDED: Draw a border for the fixed playable grid area
       const playableWidth = cols * gridSize;
       const playableHeight = rows * gridSize;
-      const startX = (canvas.width - playableWidth) / 2;
-      const startY = (canvas.height - playableHeight) / 2;
+      
+      // Draw a black background rectangle to create the illusion of a border
+      ctx.fillStyle = '#0d1b2a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Now draw the playable area background
+      ctx.fillStyle = '#1b263b';
+      ctx.fillRect(0, 0, playableWidth, playableHeight);
+      
+      // Now draw the border to show the game area.
       ctx.strokeStyle = '#ffb703'; // Bright border color
       ctx.lineWidth = 5;
-      ctx.strokeRect(startX, startY, playableWidth, playableHeight);
+      ctx.strokeRect(0, 0, playableWidth, playableHeight);
 
       // Draw the game elements within the fixed grid
       drawFood();
