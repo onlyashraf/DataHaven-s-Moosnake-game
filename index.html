@@ -125,7 +125,6 @@
       box-shadow: 0px 0px 12px rgba(0,0,0,0.4);
     }
 
-    /* 📱 Mobile Responsive */
     @media (max-width: 768px) {
       .game-container {
         flex-direction: column;
@@ -208,7 +207,6 @@
 
     let snake, direction, nextDirection, food, score, gameInterval, gameRunning, speed;
 
-    // Images
     const acorn = new Image();
     acorn.src = "acorn.png";
     const mooseHead = new Image();
@@ -216,12 +214,10 @@
     const keyImg = new Image();
     keyImg.src = "key.png";
 
-    // Key mechanics
     let key = null;
     let keyVisible = false;
     let keyTimer, keySpawnTimer;
 
-    // 📱 Responsive canvas size
     function resizeCanvas() {
       if (window.innerWidth < 768) {
         canvas.width = Math.floor(window.innerWidth * 0.9);
@@ -264,8 +260,6 @@
                 !(food.x === key.x && food.y === key.y);
       }
       keyVisible = true;
-
-      // Key disappears after 8s
       clearTimeout(keyTimer);
       keyTimer = setTimeout(removeKey, 8000);
     }
@@ -273,7 +267,7 @@
     function removeKey() {
       key = null;
       keyVisible = false;
-      scheduleKey(); // schedule next key 10s later
+      scheduleKey();
     }
 
     function scheduleKey() {
@@ -285,9 +279,8 @@
 
     function drawSnake() {
       snake.forEach((segment, index) => {
-        if (index === 0) {
-          drawMooseHead(segment.x, segment.y);
-        } else {
+        if (index === 0) drawMooseHead(segment.x, segment.y);
+        else {
           ctx.fillStyle = "#219ebc";
           ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
         }
@@ -337,7 +330,7 @@
         score++;
         scoreEl.textContent = "Score: " + score;
         placeFood();
-        speed = Math.max(80, 150 - score * 3);
+        speed = Math.max(100, 150 * Math.pow(0.99, score)); // slower speed increase
         clearInterval(gameInterval);
         gameInterval = setInterval(gameLoop, speed);
       } else if (keyVisible && key && head.x === key.x && head.y === key.y) {
@@ -404,7 +397,6 @@
       resumeBtn.style.display = "none";
     }
 
-    // Keyboard controls
     document.addEventListener("keydown", (e) => {
       const key = e.key.toLowerCase();
       if ((key === "arrowup" || key === "w") && direction.y !== 1) nextDirection = { x: 0, y: -1 };
@@ -413,7 +405,6 @@
       if ((key === "arrowright" || key === "d") && direction.x !== -1) nextDirection = { x: 1, y: 0 };
     });
 
-    // ✅ Mobile swipe detection
     let touchStartX = 0, touchStartY = 0;
     let touchEndX = 0, touchEndY = 0;
 
@@ -443,7 +434,6 @@
       }
     }
 
-    // Buttons
     startBtn.addEventListener("click", startGame);
     pauseBtn.addEventListener("click", pauseGame);
     resumeBtn.addEventListener("click", resumeGame);
