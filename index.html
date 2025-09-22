@@ -189,6 +189,7 @@
     <button id="pauseBtn" style="display:none;">Pause</button>
     <button id="resumeBtn" style="display:none;">Resume</button>
     <button id="restartBtn" style="display:none;">Restart</button>
+    <button id="fullscreenBtn">Fullscreen</button>
   </div>
 
   <script>
@@ -200,10 +201,13 @@
     const pauseBtn = document.getElementById("pauseBtn");
     const resumeBtn = document.getElementById("resumeBtn");
     const restartBtn = document.getElementById("restartBtn");
+    const fullscreenBtn = document.getElementById("fullscreenBtn");
 
-    const gridSize = 25;
+    let gridSize = 25;
     let cols = canvas.width / gridSize;
     let rows = canvas.height / gridSize;
+    const baseCols = cols;
+    const baseRows = rows;
 
     let snake, direction, nextDirection, food, score, gameInterval, gameRunning, speed;
 
@@ -217,17 +221,22 @@
     let key = null;
     let keyVisible = false;
     let keyTimer, keySpawnTimer;
+    let fullscreen = false;
 
     function resizeCanvas() {
-      if (window.innerWidth < 768) {
+      if (fullscreen) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      } else if (window.innerWidth < 768) {
         canvas.width = Math.floor(window.innerWidth * 0.9);
         canvas.height = Math.floor(window.innerHeight * 0.5);
       } else {
         canvas.width = 600;
         canvas.height = 400;
       }
-      cols = canvas.width / gridSize;
-      rows = canvas.height / gridSize;
+      gridSize = Math.floor(Math.min(canvas.width / baseCols, canvas.height / baseRows));
+      cols = baseCols;
+      rows = baseRows;
     }
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
@@ -330,7 +339,7 @@
         score++;
         scoreEl.textContent = "Score: " + score;
         placeFood();
-        speed = Math.max(100, 150 * Math.pow(0.99, score)); // slower speed increase
+        speed = Math.max(100, 150 * Math.pow(0.99, score));
         clearInterval(gameInterval);
         gameInterval = setInterval(gameLoop, speed);
       } else if (keyVisible && key && head.x === key.x && head.y === key.y) {
@@ -433,6 +442,38 @@
         if (dy < -30 && direction.y !== 1) nextDirection = { x: 0, y: -1 };
       }
     }
+
+    // Fullscreen handling
+    function enterFullscreen() {
+      if (canvas.requestFullscreen) {
+        canvas.requestFullscreen();
+      } else if (canvas.webkitRequestFullscreen) {
+        canvas.webkitRequestFullscreen();
+      } else if (canvas.msRequestFullscreen) {
+        canvas.msRequestFullscreen();
+      }
+    }
+
+    function exitFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+
+    fullscreenBtn.addEventListener("click", () => {
+      if (!fullscreen) {
+        enterFullscreen();
+      } else {
+        exitFullscreen();
+      }
+    });
+
+    document.addEventListener("fullscreenchange", () => {
+      fullscreen = !!document.fullscreenElement;
+      resizeCanvas();
+      document.getElementById("ui").style.display = fullscreen ? "none" : "block";
+      document.querySelector(".side-panel").style.display = fullscreen ? "none" : "flex";
+    });
 
     startBtn.addEventListener("click", startGame);
     pauseBtn.addEventListener("click", pauseGame);
