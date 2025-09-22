@@ -125,6 +125,34 @@
       box-shadow: 0px 0px 12px rgba(0,0,0,0.4);
     }
 
+    /* Mobile Controls */
+    .mobile-controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .mobile-row {
+      display: flex;
+      gap: 8px;
+    }
+    .mobile-btn {
+      width: 60px;
+      height: 60px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 18px;
+      border-radius: 12px;
+      background: #fb8500;
+      border: 2px solid #023047;
+      box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    .mobile-btn:active {
+      background: #ffb703;
+      transform: scale(0.95);
+    }
+
     @media (max-width: 768px) {
       .game-container {
         flex-direction: column;
@@ -165,7 +193,7 @@
       ↓ / S = Down<br>
       ← / A = Left<br>
       → / D = Right<br>
-      👆 Swipe = Mobile
+      👆 Swipe / Buttons = Mobile
     </div>
 
     <canvas id="gameCanvas" width="600" height="400"></canvas>
@@ -189,7 +217,16 @@
     <button id="pauseBtn" style="display:none;">Pause</button>
     <button id="resumeBtn" style="display:none;">Resume</button>
     <button id="restartBtn" style="display:none;">Restart</button>
-    <button id="fullscreenBtn">Fullscreen</button>
+  </div>
+
+  <!-- Mobile Buttons -->
+  <div class="mobile-controls">
+    <button class="mobile-btn" id="btnUp">↑</button>
+    <div class="mobile-row">
+      <button class="mobile-btn" id="btnLeft">←</button>
+      <button class="mobile-btn" id="btnDown">↓</button>
+      <button class="mobile-btn" id="btnRight">→</button>
+    </div>
   </div>
 
   <script>
@@ -201,7 +238,6 @@
     const pauseBtn = document.getElementById("pauseBtn");
     const resumeBtn = document.getElementById("resumeBtn");
     const restartBtn = document.getElementById("restartBtn");
-    const fullscreenBtn = document.getElementById("fullscreenBtn");
 
     let gridSize = 25;
     let cols = canvas.width / gridSize;
@@ -221,13 +257,9 @@
     let key = null;
     let keyVisible = false;
     let keyTimer, keySpawnTimer;
-    let fullscreen = false;
 
     function resizeCanvas() {
-      if (fullscreen) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      } else if (window.innerWidth < 768) {
+      if (window.innerWidth < 768) {
         canvas.width = Math.floor(window.innerWidth * 0.9);
         canvas.height = Math.floor(window.innerHeight * 0.5);
       } else {
@@ -414,6 +446,7 @@
       if ((key === "arrowright" || key === "d") && direction.x !== -1) nextDirection = { x: 1, y: 0 };
     });
 
+    // Touch swipe (still works)
     let touchStartX = 0, touchStartY = 0;
     let touchEndX = 0, touchEndY = 0;
 
@@ -443,43 +476,19 @@
       }
     }
 
-    // Fullscreen handling
-    function enterFullscreen() {
-      if (canvas.requestFullscreen) {
-        canvas.requestFullscreen();
-      } else if (canvas.webkitRequestFullscreen) {
-        canvas.webkitRequestFullscreen();
-      } else if (canvas.msRequestFullscreen) {
-        canvas.msRequestFullscreen();
-      }
-    }
-
-    function exitFullscreen() {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-    }
-
-    fullscreenBtn.addEventListener("click", () => {
-      if (!fullscreen) {
-        enterFullscreen();
-      } else {
-        exitFullscreen();
-      }
+    // Mobile Button Controls
+    document.getElementById("btnUp").addEventListener("click", () => {
+      if (direction.y !== 1) nextDirection = { x: 0, y: -1 };
     });
-
-    document.addEventListener("fullscreenchange", () => {
-      fullscreen = !!document.fullscreenElement;
-      resizeCanvas();
-      document.getElementById("ui").style.display = fullscreen ? "none" : "block";
-      document.querySelector(".side-panel").style.display = fullscreen ? "none" : "flex";
+    document.getElementById("btnDown").addEventListener("click", () => {
+      if (direction.y !== -1) nextDirection = { x: 0, y: 1 };
+    });
+    document.getElementById("btnLeft").addEventListener("click", () => {
+      if (direction.x !== 1) nextDirection = { x: -1, y: 0 };
+    });
+    document.getElementById("btnRight").addEventListener("click", () => {
+      if (direction.x !== -1) nextDirection = { x: 1, y: 0 };
     });
 
     startBtn.addEventListener("click", startGame);
-    pauseBtn.addEventListener("click", pauseGame);
-    resumeBtn.addEventListener("click", resumeGame);
-    restartBtn.addEventListener("click", startGame);
-  </script>
-</body>
-</html>
-
+    pauseBtn.addEventListener("
