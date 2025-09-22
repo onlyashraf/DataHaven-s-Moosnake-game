@@ -69,14 +69,7 @@
       text-align: center;
     }
     #score {
-      font-family: 'Press Start 2P', cursive;
-      font-size: 16px;
-      color: #212529;
-      background: rgba(255, 255, 255, 0.7);
-      padding: 5px 10px;
-      border-radius: 8px;
-      display: inline-block;
-      margin-bottom: 10px;
+      display: none; /* now we draw score inside canvas */
     }
     button {
       background: #ffb703;
@@ -124,61 +117,6 @@
       border: 2px solid #415a77;
       box-shadow: 0px 0px 12px rgba(0,0,0,0.4);
     }
-
-    /* Mobile Controls */
-    .mobile-controls {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .mobile-row {
-      display: flex;
-      gap: 8px;
-    }
-    .mobile-btn {
-      width: 60px;
-      height: 60px;
-      font-family: 'Press Start 2P', cursive;
-      font-size: 18px;
-      border-radius: 12px;
-      background: #fb8500;
-      border: 2px solid #023047;
-      box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
-      cursor: pointer;
-    }
-    .mobile-btn:active {
-      background: #ffb703;
-      transform: scale(0.95);
-    }
-
-    @media (max-width: 768px) {
-      .game-container {
-        flex-direction: column;
-        align-items: center;
-        gap: 15px;
-      }
-      canvas {
-        width: 95vw;
-        height: auto;
-      }
-      .side-box, .side-panel {
-        width: 90%;
-        text-align: center;
-        font-size: 12px;
-      }
-      #ui button {
-        font-size: 18px;
-        padding: 12px 24px;
-        width: 90%;
-        max-width: 250px;
-      }
-      #score {
-        font-size: 18px;
-        padding: 10px 15px;
-      }
-    }
   </style>
 </head>
 <body>
@@ -193,7 +131,7 @@
       ↓ / S = Down<br>
       ← / A = Left<br>
       → / D = Right<br>
-      👆 Swipe / Buttons = Mobile
+      👆 Swipe = Mobile
     </div>
 
     <canvas id="gameCanvas" width="600" height="400"></canvas>
@@ -212,32 +150,22 @@
   </div>
 
   <div id="ui">
-    <p id="score">Score: 0</p><br>
     <button id="startBtn">Start Game</button>
     <button id="pauseBtn" style="display:none;">Pause</button>
     <button id="resumeBtn" style="display:none;">Resume</button>
     <button id="restartBtn" style="display:none;">Restart</button>
-  </div>
-
-  <!-- Mobile Buttons -->
-  <div class="mobile-controls">
-    <button class="mobile-btn" id="btnUp">↑</button>
-    <div class="mobile-row">
-      <button class="mobile-btn" id="btnLeft">←</button>
-      <button class="mobile-btn" id="btnDown">↓</button>
-      <button class="mobile-btn" id="btnRight">→</button>
-    </div>
+    <button id="fullscreenBtn">Fullscreen</button>
   </div>
 
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    const scoreEl = document.getElementById("score");
     const startBtn = document.getElementById("startBtn");
     const pauseBtn = document.getElementById("pauseBtn");
     const resumeBtn = document.getElementById("resumeBtn");
     const restartBtn = document.getElementById("restartBtn");
+    const fullscreenBtn = document.getElementById("fullscreenBtn");
 
     let gridSize = 25;
     let cols = canvas.width / gridSize;
@@ -257,9 +185,13 @@
     let key = null;
     let keyVisible = false;
     let keyTimer, keySpawnTimer;
+    let fullscreen = false;
 
     function resizeCanvas() {
-      if (window.innerWidth < 768) {
+      if (fullscreen) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      } else if (window.innerWidth < 768) {
         canvas.width = Math.floor(window.innerWidth * 0.9);
         canvas.height = Math.floor(window.innerHeight * 0.5);
       } else {
@@ -279,7 +211,6 @@
       nextDirection = { x: 1, y: 0 };
       score = 0;
       speed = 150;
-      scoreEl.textContent = "Score: " + score;
       placeFood();
       removeKey();
       scheduleKey();
@@ -290,6 +221,8 @@
       while (!valid) {
         food = { x: Math.floor(Math.random() * cols), y: Math.floor(Math.random() * rows) };
         valid = !snake.some(seg => seg.x === food.x && seg.y === food.y);
+        // prevent food spawning in top 2 rows (score zone)
+        if (food.y < 2) valid = false;
       }
     }
 
@@ -299,6 +232,8 @@
         key = { x: Math.floor(Math.random() * cols), y: Math.floor(Math.random() * rows) };
         valid = !snake.some(seg => seg.x === key.x && seg.y === key.y) &&
                 !(food.x === key.x && food.y === key.y);
+        // prevent key spawning in top 2 rows (score zone)
+        if (key.y < 2) valid = false;
       }
       keyVisible = true;
       clearTimeout(keyTimer);
@@ -352,6 +287,15 @@
       }
     }
 
+    function drawScore() {
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.fillRect(5, 5, 160, 30);
+      ctx.fillStyle = "white";
+      ctx.font = "16px 'Press Start 2P', cursive";
+      ctx.textAlign = "left";
+      ctx.fillText("Score: " + score, 15, 28);
+    }
+
     function update() {
       const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
 
@@ -369,14 +313,12 @@
 
       if (head.x === food.x && head.y === food.y) {
         score++;
-        scoreEl.textContent = "Score: " + score;
         placeFood();
         speed = Math.max(100, 150 * Math.pow(0.99, score));
         clearInterval(gameInterval);
         gameInterval = setInterval(gameLoop, speed);
       } else if (keyVisible && key && head.x === key.x && head.y === key.y) {
         score += 10;
-        scoreEl.textContent = "Score: " + score;
         removeKey();
       } else {
         snake.pop();
@@ -395,6 +337,7 @@
       drawFood();
       drawKey();
       drawSnake();
+      drawScore(); // draw score inside canvas
     }
 
     function gameLoop() {
@@ -446,7 +389,6 @@
       if ((key === "arrowright" || key === "d") && direction.x !== -1) nextDirection = { x: 1, y: 0 };
     });
 
-    // Touch swipe (still works)
     let touchStartX = 0, touchStartY = 0;
     let touchEndX = 0, touchEndY = 0;
 
@@ -476,18 +418,35 @@
       }
     }
 
-    // Mobile Button Controls
-    document.getElementById("btnUp").addEventListener("click", () => {
-      if (direction.y !== 1) nextDirection = { x: 0, y: -1 };
+    function enterFullscreen() {
+      if (canvas.requestFullscreen) {
+        canvas.requestFullscreen();
+      } else if (canvas.webkitRequestFullscreen) {
+        canvas.webkitRequestFullscreen();
+      } else if (canvas.msRequestFullscreen) {
+        canvas.msRequestFullscreen();
+      }
+    }
+
+    function exitFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+
+    fullscreenBtn.addEventListener("click", () => {
+      if (!fullscreen) {
+        enterFullscreen();
+      } else {
+        exitFullscreen();
+      }
     });
-    document.getElementById("btnDown").addEventListener("click", () => {
-      if (direction.y !== -1) nextDirection = { x: 0, y: 1 };
-    });
-    document.getElementById("btnLeft").addEventListener("click", () => {
-      if (direction.x !== 1) nextDirection = { x: -1, y: 0 };
-    });
-    document.getElementById("btnRight").addEventListener("click", () => {
-      if (direction.x !== -1) nextDirection = { x: 1, y: 0 };
+
+    document.addEventListener("fullscreenchange", () => {
+      fullscreen = !!document.fullscreenElement;
+      resizeCanvas();
+      document.getElementById("ui").style.display = fullscreen ? "none" : "block";
+      document.querySelector(".side-panel").style.display = fullscreen ? "none" : "flex";
     });
 
     startBtn.addEventListener("click", startGame);
