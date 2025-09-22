@@ -128,7 +128,7 @@
       box-shadow: 0px 0px 12px rgba(0,0,0,0.4);
     }
 
-    /*Fullscreen score overlay */
+    /* Fullscreen score overlay */
     #fullscreenScore {
       position: fixed;
       top: 15px;
@@ -501,10 +501,9 @@
       resizeCanvas();
       document.getElementById("ui").style.display = fullscreen ? "none" : "block";
       document.querySelector(".side-panel").style.display = fullscreen ? "none" : "flex";
-      //  toggle overlay
       fullscreenScore.style.display = fullscreen ? "block" : "none";
     });
 
+    // ✅ FIXED button listeners
     startBtn.addEventListener("click", startGame);
-    pauseBtn.addEventListener
-
+    pauseBtn.addEventListener("click", pause
