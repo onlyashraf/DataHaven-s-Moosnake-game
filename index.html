@@ -124,6 +124,8 @@
       border: 2px solid #415a77;
       box-shadow: 0px 0px 12px rgba(0,0,0,0.4);
     }
+
+    /* 📱 Mobile Responsive */
     @media (max-width: 768px) {
       .game-container {
         flex-direction: column;
@@ -206,19 +208,20 @@
 
     let snake, direction, nextDirection, food, score, gameInterval, gameRunning, speed;
 
+    // Images
     const acorn = new Image();
     acorn.src = "acorn.png";
-
     const mooseHead = new Image();
     mooseHead.src = "moose.png";
-
     const keyImg = new Image();
     keyImg.src = "key.png";
 
+    // Key mechanics
     let key = null;
     let keyVisible = false;
     let keyTimer, keySpawnTimer;
 
+    // 📱 Responsive canvas size
     function resizeCanvas() {
       if (window.innerWidth < 768) {
         canvas.width = Math.floor(window.innerWidth * 0.9);
@@ -261,22 +264,22 @@
                 !(food.x === key.x && food.y === key.y);
       }
       keyVisible = true;
+
+      // Key disappears after 8s
       clearTimeout(keyTimer);
-      keyTimer = setTimeout(() => {
-        removeKey();
-        scheduleKey();
-      }, 8000);
+      keyTimer = setTimeout(removeKey, 8000);
     }
 
     function removeKey() {
       key = null;
       keyVisible = false;
+      scheduleKey(); // schedule next key 10s later
     }
 
     function scheduleKey() {
       clearTimeout(keySpawnTimer);
       keySpawnTimer = setTimeout(() => {
-        placeKey();
+        if (!keyVisible) placeKey();
       }, 10000);
     }
 
@@ -295,11 +298,8 @@
       const size = gridSize * 1.6;
       const cx = x * gridSize + gridSize / 2;
       const cy = y * gridSize + gridSize / 2;
-      let angle = 0;
-      if (direction.x === 1) angle = 0;
-      if (direction.x === -1) angle = Math.PI;
-      if (direction.y === -1) angle = -Math.PI / 2;
-      if (direction.y === 1) angle = Math.PI / 2;
+      const imageRotationOffset = Math.PI / 2;
+      const angle = Math.atan2(direction.y, direction.x) + imageRotationOffset;
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(angle);
@@ -337,7 +337,7 @@
         score++;
         scoreEl.textContent = "Score: " + score;
         placeFood();
-        speed = Math.max(70, 150 * Math.pow(0.97, score));
+        speed = Math.max(80, 150 - score * 3);
         clearInterval(gameInterval);
         gameInterval = setInterval(gameLoop, speed);
       } else if (keyVisible && key && head.x === key.x && head.y === key.y) {
@@ -357,6 +357,7 @@
       gradient.addColorStop(1, "#1b263b");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       drawFood();
       drawKey();
       drawSnake();
@@ -403,6 +404,7 @@
       resumeBtn.style.display = "none";
     }
 
+    // Keyboard controls
     document.addEventListener("keydown", (e) => {
       const key = e.key.toLowerCase();
       if ((key === "arrowup" || key === "w") && direction.y !== 1) nextDirection = { x: 0, y: -1 };
@@ -411,6 +413,7 @@
       if ((key === "arrowright" || key === "d") && direction.x !== -1) nextDirection = { x: 1, y: 0 };
     });
 
+    // ✅ Mobile swipe detection
     let touchStartX = 0, touchStartY = 0;
     let touchEndX = 0, touchEndY = 0;
 
@@ -430,6 +433,7 @@
     function handleSwipe() {
       const dx = touchEndX - touchStartX;
       const dy = touchEndY - touchStartY;
+
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx > 30 && direction.x !== -1) nextDirection = { x: 1, y: 0 };
         if (dx < -30 && direction.x !== 1) nextDirection = { x: -1, y: 0 };
@@ -439,6 +443,7 @@
       }
     }
 
+    // Buttons
     startBtn.addEventListener("click", startGame);
     pauseBtn.addEventListener("click", pauseGame);
     resumeBtn.addEventListener("click", resumeGame);
