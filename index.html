@@ -253,6 +253,26 @@
       }, 10000);
     }
 
+    function drawGrid() {
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= cols; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * gridSize, 0);
+        ctx.lineTo(x * gridSize, rows * gridSize);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= rows; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * gridSize);
+        ctx.lineTo(cols * gridSize, y * gridSize);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = "#ffb703";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(0, 0, cols * gridSize, rows * gridSize);
+    }
+
     function drawSnake() {
       snake.forEach((segment, index) => {
         if (index === 0) drawMooseHead(segment.x, segment.y);
@@ -283,7 +303,10 @@
     function drawKey() {
       if (keyVisible && key) {
         const size = gridSize * 1.2;
+        ctx.shadowColor = "#ffd700";
+        ctx.shadowBlur = 15;
         ctx.drawImage(keyImg, key.x * gridSize, key.y * gridSize, size, size);
+        ctx.shadowBlur = 0;
       }
     }
 
@@ -334,10 +357,12 @@
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      drawGrid();
       drawFood();
       drawKey();
       drawSnake();
       drawScore(); // draw score inside canvas
+      drawScore();
     }
 
     function gameLoop() {
