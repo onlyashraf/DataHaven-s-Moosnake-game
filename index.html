@@ -44,6 +44,7 @@
       margin-bottom: 15px;
       letter-spacing: 1px;
     }
+
     .game-container {
       display: flex;
       align-items: flex-start;
@@ -53,42 +54,75 @@
       flex-wrap: wrap;
       max-width: 100%;
     }
-    canvas {
-      background: linear-gradient(145deg, #0d1b2a, #1b263b);
-      border: 3px solid #415a77;
+
+    /* wrapper that will be requestFullscreen()'d */
+    .game-wrapper {
+      position: relative;
+      display: inline-block;
       border-radius: 15px;
-      box-shadow: 0px 0px 25px rgba(0, 0, 0, 0.6),
-                  0px 0px 50px rgba(65, 90, 119, 0.4) inset;
-      display: block;
-      max-width: 100%;
-      height: auto;
-      touch-action: none;
+      overflow: hidden;
+      box-shadow: 0px 0px 25px rgba(0,0,0,0.6);
+      background: linear-gradient(145deg, #0d1b2a, #1b263b);
     }
-    /* fullscreen mobile fix */
-    .fullscreen-mobile {
-      background: #0d1b2a;
+
+    /* make wrapper fill viewport when we add the fullscreen class or when it's actually fullscreen */
+    .game-wrapper.fullscreen,
+    .game-wrapper:fullscreen,
+    .game-wrapper:-webkit-full-screen {
       position: fixed;
-      top: 0; left: 0;
+      top: 0;
+      left: 0;
       width: 100vw;
       height: 100vh;
-      z-index: 1;
+      z-index: 9999;
+      border-radius: 0;
+      box-shadow: none;
     }
+
+    /* mobile-specific solid color overlay */
+    .game-wrapper.fullscreen-mobile {
+      background: #0d1b2a;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 3px solid #415a77;
+      border-radius: 15px;
+      box-sizing: border-box;
+      touch-action: none;
+      background: transparent; /* wrapper already has gradient */
+    }
+
+    /* Score overlay inside wrapper (so it stays visible in fullscreen) */
+    #scoreOverlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 10001;
+      pointer-events: none;
+    }
+
+    #score {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 16px;
+      color: #212529;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 6px 12px;
+      border-radius: 8px;
+      display: inline-block;
+      pointer-events: none;
+    }
+
+    /* keep UI & side panel separate (we hide them via JS when fullscreen) */
     #ui {
       margin-top: 15px;
       text-align: center;
       z-index: 2;
       position: relative;
     }
-    #score {
-      font-family: 'Press Start 2P', cursive;
-      font-size: 16px;
-      color: #212529;
-      background: rgba(255, 255, 255, 0.7);
-      padding: 5px 10px;
-      border-radius: 8px;
-      display: inline-block;
-      margin-bottom: 10px;
-    }
+
     button {
       background: #ffb703;
       border: none;
@@ -103,6 +137,7 @@
       background: #fb8500;
       transform: scale(1.05);
     }
+
     .side-panel {
       display: flex;
       flex-direction: column;
@@ -136,15 +171,12 @@
       box-shadow: 0px 0px 12px rgba(0,0,0,0.4);
     }
 
+    /* Helpful responsive rules */
     @media (max-width: 768px) {
       .game-container {
         flex-direction: column;
         align-items: center;
         gap: 15px;
-      }
-      canvas {
-        width: 95vw;
-        height: auto;
       }
       .side-box, .side-panel {
         width: 90%;
@@ -161,6 +193,12 @@
         font-size: 18px;
         padding: 10px 15px;
       }
+    }
+
+    /* Force hide UI when we add this class to body (fallback) */
+    body.hide-ui #ui,
+    body.hide-ui .side-panel {
+      display: none !important;
     }
   </style>
 </head>
@@ -179,7 +217,11 @@
       👆 Swipe = Mobile
     </div>
 
-    <canvas id="gameCanvas" width="600" height="400"></canvas>
+    <!-- WRAPPER: contains canvas + score overlay. We requestFullscreen() on this wrapper. -->
+    <div id="gameWrapper" class="game-wrapper" style="width:600px;height:400px;">
+      <canvas id="gameCanvas" width="600" height="400"></canvas>
+      <div id="scoreOverlay"><div id="score">Score: 0</div></div>
+    </div>
 
     <div class="side-panel">
       <div class="side-box">
@@ -195,7 +237,7 @@
   </div>
 
   <div id="ui">
-    <p id="score">Score: 0</p><br>
+    <!-- Score moved into wrapper, keep just buttons here -->
     <button id="startBtn">Start Game</button>
     <button id="pauseBtn" style="display:none;">Pause</button>
     <button id="resumeBtn" style="display:none;">Resume</button>
@@ -204,6 +246,8 @@
   </div>
 
   <script>
+    // Elements
+    const wrapper = document.getElementById("gameWrapper");
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
@@ -214,44 +258,74 @@
     const restartBtn = document.getElementById("restartBtn");
     const fullscreenBtn = document.getElementById("fullscreenBtn");
 
+    // Grid & base
     let gridSize = 25;
     let cols = canvas.width / gridSize;
     let rows = canvas.height / gridSize;
     const baseCols = cols;
     const baseRows = rows;
 
+    // Game state
     let snake, direction, nextDirection, food, score, gameInterval, gameRunning, speed;
-
-    const acorn = new Image();
-    acorn.src = "acorn.png";
-    const mooseHead = new Image();
-    mooseHead.src = "moose.png";
-    const keyImg = new Image();
-    keyImg.src = "key.png";
-
     let key = null;
     let keyVisible = false;
     let keyTimer, keySpawnTimer;
     let fullscreen = false;
 
+    // Images
+    const acorn = new Image(); acorn.src = "acorn.png";
+    const mooseHead = new Image(); mooseHead.src = "moose.png";
+    const keyImg = new Image(); keyImg.src = "key.png";
+
+    // Mobile detection
+    function isMobile() {
+      return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    }
+
+    // Resize canvas to wrapper or default sizes
     function resizeCanvas() {
-      if (fullscreen) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+      // If wrapper is fullscreen or document is fullscreen, use viewport
+      const docFS = !!document.fullscreenElement;
+      const wrapperIsFS = document.fullscreenElement === wrapper;
+
+      if (wrapper.classList.contains("fullscreen") || wrapperIsFS || docFS) {
+        // ensure wrapper fills viewport
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        wrapper.style.width = w + "px";
+        wrapper.style.height = h + "px";
+        // set canvas drawing buffer size
+        canvas.width = w;
+        canvas.height = h;
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
       } else if (window.innerWidth < 768) {
-        canvas.width = Math.floor(window.innerWidth * 0.9);
-        canvas.height = Math.floor(window.innerHeight * 0.5);
+        const w = Math.floor(window.innerWidth * 0.9);
+        const h = Math.floor(window.innerHeight * 0.5);
+        canvas.width = w;
+        canvas.height = h;
+        wrapper.style.width = w + "px";
+        wrapper.style.height = h + "px";
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
       } else {
         canvas.width = 600;
         canvas.height = 400;
+        wrapper.style.width = "600px";
+        wrapper.style.height = "400px";
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
       }
-      gridSize = Math.floor(Math.min(canvas.width / baseCols, canvas.height / baseRows));
+
+      gridSize = Math.max(4, Math.floor(Math.min(canvas.width / baseCols, canvas.height / baseRows)));
       cols = baseCols;
       rows = baseRows;
     }
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
 
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    // Game functions
     function resetGame() {
       snake = [{ x: 5, y: 5 }];
       direction = { x: 1, y: 0 };
@@ -316,18 +390,34 @@
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(angle);
-      ctx.drawImage(mooseHead, -size / 2, -size / 2, size, size);
+      // If moose image not loaded yet, draw a placeholder
+      if (mooseHead.complete && mooseHead.naturalWidth !== 0) {
+        ctx.drawImage(mooseHead, -size / 2, -size / 2, size, size);
+      } else {
+        ctx.fillStyle = "#ffd166";
+        ctx.fillRect(-size/2, -size/2, size, size);
+      }
       ctx.restore();
     }
 
     function drawFood() {
-      ctx.drawImage(acorn, food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+      if (acorn.complete && acorn.naturalWidth !== 0) {
+        ctx.drawImage(acorn, food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+      } else {
+        ctx.fillStyle = "#ffb703";
+        ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+      }
     }
 
     function drawKey() {
       if (keyVisible && key) {
         const size = gridSize * 1.2;
-        ctx.drawImage(keyImg, key.x * gridSize, key.y * gridSize, size, size);
+        if (keyImg.complete && keyImg.naturalWidth !== 0) {
+          ctx.drawImage(keyImg, key.x * gridSize, key.y * gridSize, size, size);
+        } else {
+          ctx.fillStyle = "#ffd700";
+          ctx.fillRect(key.x * gridSize, key.y * gridSize, size, size);
+        }
       }
     }
 
@@ -365,12 +455,15 @@
     }
 
     function draw() {
+      // draw gradient/background on the drawing buffer
       const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
       gradient.addColorStop(0, "#0d1b2a");
       gradient.addColorStop(1, "#1b263b");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // scaling: game coordinates are based on gridSize & base cols/rows
+      // We'll draw using the gridSize multiplier
       drawFood();
       drawKey();
       drawSnake();
@@ -411,40 +504,38 @@
     function gameOver() {
       clearInterval(gameInterval);
       gameRunning = false;
+      // keep it simple — alert
       alert("Game Over!\nScore: " + score);
       restartBtn.style.display = "inline-block";
       pauseBtn.style.display = "none";
       resumeBtn.style.display = "none";
     }
 
+    // Input handlers
     document.addEventListener("keydown", (e) => {
-      const key = e.key.toLowerCase();
-      if ((key === "arrowup" || key === "w") && direction.y !== 1) nextDirection = { x: 0, y: -1 };
-      if ((key === "arrowdown" || key === "s") && direction.y !== -1) nextDirection = { x: 0, y: 1 };
-      if ((key === "arrowleft" || key === "a") && direction.x !== 1) nextDirection = { x: -1, y: 0 };
-      if ((key === "arrowright" || key === "d") && direction.x !== -1) nextDirection = { x: 1, y: 0 };
+      const k = e.key.toLowerCase();
+      if ((k === "arrowup" || k === "w") && direction.y !== 1) nextDirection = { x: 0, y: -1 };
+      if ((k === "arrowdown" || k === "s") && direction.y !== -1) nextDirection = { x: 0, y: 1 };
+      if ((k === "arrowleft" || k === "a") && direction.x !== 1) nextDirection = { x: -1, y: 0 };
+      if ((k === "arrowright" || k === "d") && direction.x !== -1) nextDirection = { x: 1, y: 0 };
     });
 
-    let touchStartX = 0, touchStartY = 0;
-    let touchEndX = 0, touchEndY = 0;
-
+    // Touch swipe
+    let touchStartX = 0, touchStartY = 0, touchEndX = 0, touchEndY = 0;
     canvas.addEventListener("touchstart", (e) => {
       const touch = e.touches[0];
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;
-    });
-
+    }, {passive:true});
     canvas.addEventListener("touchend", (e) => {
       const touch = e.changedTouches[0];
       touchEndX = touch.clientX;
       touchEndY = touch.clientY;
       handleSwipe();
-    });
-
+    }, {passive:true});
     function handleSwipe() {
       const dx = touchEndX - touchStartX;
       const dy = touchEndY - touchStartY;
-
       if (Math.abs(dx) > Math.abs(dy)) {
         if (dx > 30 && direction.x !== -1) nextDirection = { x: 1, y: 0 };
         if (dx < -30 && direction.x !== 1) nextDirection = { x: -1, y: 0 };
@@ -454,60 +545,68 @@
       }
     }
 
-    // Fullscreen handling
+    // Fullscreen handling (request fullscreen on the wrapper so score stays visible)
     function enterFullscreen() {
-      if (canvas.requestFullscreen) {
-        canvas.requestFullscreen();
-      } else if (canvas.webkitRequestFullscreen) {
-        canvas.webkitRequestFullscreen();
-      } else if (canvas.msRequestFullscreen) {
-        canvas.msRequestFullscreen();
-      }
+      // prefer wrapper element fullscreen
+      if (wrapper.requestFullscreen) wrapper.requestFullscreen();
+      else if (wrapper.webkitRequestFullscreen) wrapper.webkitRequestFullscreen();
+      else if (canvas.requestFullscreen) canvas.requestFullscreen();
+      else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
     }
-
     function exitFullscreen() {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
     }
 
     fullscreenBtn.addEventListener("click", () => {
-      if (!fullscreen) {
-        enterFullscreen();
-      } else {
-        exitFullscreen();
-      }
+      if (!fullscreen) enterFullscreen();
+      else exitFullscreen();
     });
 
-    function isMobile() {
-      return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-    }
-
+    // fullscreen change: add classes, resize, hide UI
     document.addEventListener("fullscreenchange", () => {
       fullscreen = !!document.fullscreenElement;
+      const docFS = document.fullscreenElement;
+      const wrapperIsFS = docFS === wrapper;
+
+      if (fullscreen) {
+        // mark body to hide UI (fallback)
+        document.body.classList.add("hide-ui");
+
+        // add fullscreen classes to wrapper for styles and mobile overlay
+        wrapper.classList.add("fullscreen");
+        if (isMobile()) wrapper.classList.add("fullscreen-mobile");
+        else wrapper.classList.remove("fullscreen-mobile");
+
+        // hide the buttons explicitly (they'll be outside wrapper, but we hide as fallback)
+        [...document.querySelectorAll("#ui button")].forEach(btn => btn.style.display = "none");
+        // hide side panel
+        const sp = document.querySelector(".side-panel");
+        if (sp) sp.style.display = "none";
+      } else {
+        document.body.classList.remove("hide-ui");
+        wrapper.classList.remove("fullscreen", "fullscreen-mobile");
+        // restore UI displays
+        [...document.querySelectorAll("#ui button")].forEach(btn => btn.style.display = "");
+        const sp = document.querySelector(".side-panel");
+        if (sp) sp.style.display = "";
+      }
+
+      // Force canvas/wrapper sizing update
       resizeCanvas();
 
-      // hide side panel in fullscreen
-      document.querySelector(".side-panel").style.display = fullscreen ? "none" : "flex";
-
-      // keep score visible, hide buttons in fullscreen
-      scoreEl.style.display = "inline-block";
-      [...document.querySelectorAll("#ui button")].forEach(btn => {
-        btn.style.display = fullscreen ? "none" : "";
-      });
-
-      // mobile fullscreen fix
-      if (fullscreen && isMobile()) {
-        canvas.classList.add("fullscreen-mobile");
-      } else {
-        canvas.classList.remove("fullscreen-mobile");
-      }
+      // remove rounded corners on canvas when fullscreen
+      canvas.style.borderRadius = (fullscreen ? "0" : "15px");
     });
 
+    // Wire buttons
     startBtn.addEventListener("click", startGame);
     pauseBtn.addEventListener("click", pauseGame);
     resumeBtn.addEventListener("click", resumeGame);
     restartBtn.addEventListener("click", startGame);
+
+    // initialize
+    resetGame();
   </script>
 </body>
 </html>
