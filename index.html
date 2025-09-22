@@ -95,7 +95,7 @@
       background: transparent; /* wrapper already has gradient */
     }
 
-    /* NEW: Add a visible border for fullscreen mobile */
+    /* Add a visible border for fullscreen mobile */
     .game-wrapper.fullscreen-mobile canvas {
         border: 5px solid #ffb703 !important;
     }
@@ -264,10 +264,8 @@
 
     // Grid & base
     let gridSize = 25;
-    let cols = canvas.width / gridSize;
-    let rows = canvas.height / gridSize;
-    const baseCols = cols;
-    const baseRows = rows;
+    let cols = 24; // Fixed column count
+    let rows = 16; // Fixed row count
 
     // Game state
     let snake, direction, nextDirection, food, score, gameInterval, gameRunning, speed;
@@ -288,17 +286,14 @@
 
     // Resize canvas to wrapper or default sizes
     function resizeCanvas() {
-      // If wrapper is fullscreen or document is fullscreen, use viewport
       const docFS = !!document.fullscreenElement;
       const wrapperIsFS = document.fullscreenElement === wrapper;
 
       if (wrapper.classList.contains("fullscreen") || wrapperIsFS || docFS) {
-        // ensure wrapper fills viewport
         const w = window.innerWidth;
         const h = window.innerHeight;
         wrapper.style.width = w + "px";
         wrapper.style.height = h + "px";
-        // set canvas drawing buffer size
         canvas.width = w;
         canvas.height = h;
         canvas.style.width = "100%";
@@ -320,10 +315,6 @@
         canvas.style.width = "100%";
         canvas.style.height = "100%";
       }
-
-      gridSize = Math.max(4, Math.floor(Math.min(canvas.width / baseCols, canvas.height / baseRows)));
-      cols = baseCols;
-      rows = baseRows;
     }
 
     window.addEventListener("resize", resizeCanvas);
@@ -466,8 +457,17 @@
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // scaling: game coordinates are based on gridSize & base cols/rows
-      // We'll draw using the gridSize multiplier
+      // ADDED: Draw a border for the fixed playable grid area
+      const playableWidth = cols * gridSize;
+      const playableHeight = rows * gridSize;
+      const startX = (canvas.width - playableWidth) / 2;
+      const startY = (canvas.height - playableHeight) / 2;
+
+      ctx.strokeStyle = '#ffb703'; // Bright border color
+      ctx.lineWidth = 5;
+      ctx.strokeRect(startX, startY, playableWidth, playableHeight);
+
+      // Draw the game elements within the fixed grid
       drawFood();
       drawKey();
       drawSnake();
@@ -574,32 +574,22 @@
       const wrapperIsFS = docFS === wrapper;
 
       if (fullscreen) {
-        // mark body to hide UI (fallback)
         document.body.classList.add("hide-ui");
-
-        // add fullscreen classes to wrapper for styles and mobile overlay
         wrapper.classList.add("fullscreen");
         if (isMobile()) wrapper.classList.add("fullscreen-mobile");
         else wrapper.classList.remove("fullscreen-mobile");
-
-        // hide the buttons explicitly (they'll be outside wrapper, but we hide as fallback)
         [...document.querySelectorAll("#ui button")].forEach(btn => btn.style.display = "none");
-        // hide side panel
         const sp = document.querySelector(".side-panel");
         if (sp) sp.style.display = "none";
       } else {
         document.body.classList.remove("hide-ui");
         wrapper.classList.remove("fullscreen", "fullscreen-mobile");
-        // restore UI displays
         [...document.querySelectorAll("#ui button")].forEach(btn => btn.style.display = "");
         const sp = document.querySelector(".side-panel");
         if (sp) sp.style.display = "";
       }
 
-      // Force canvas/wrapper sizing update
       resizeCanvas();
-
-      // NEW: Force border and remove rounded corners in fullscreen
       canvas.style.borderRadius = (fullscreen ? "0" : "15px");
       if (fullscreen && !isMobile()) {
           canvas.style.border = "3px solid #415a77";
