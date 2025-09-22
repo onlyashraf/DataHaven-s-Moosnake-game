@@ -2,338 +2,216 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Moosnake Game with Key Power-Up</title>
+  <title>Moosnake Game</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-    html, body {
+    body {
+      font-family: 'Press Start 2P', cursive;
+      background: linear-gradient(to bottom, #1a1a1a, #000);
+      color: #fff;
       margin: 0;
       padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
-    body {
-      background: url("better.png") no-repeat center center fixed;
-      background-size: cover;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
-      justify-content: flex-start;
-      text-align: center;
-    }
-    #logo {
-      display: block;
-      margin: 10px auto;
-      width: 100px;
-      height: auto;
-    }
-    h1 {
-      font-family: 'Press Start 2P', cursive;
-      font-size: 22px;
-      color: #ffb703;
-      text-shadow: 3px 3px 0px #fb8500, 6px 6px 0px #023047;
-      margin-bottom: 5px;
-      letter-spacing: 2px;
-    }
-    h2 {
-      font-family: 'Press Start 2P', cursive;
-      font-size: 14px;
-      color: #fb8500;
-      text-shadow: 1px 1px 0px #023047;
-      margin-bottom: 15px;
-      letter-spacing: 1px;
+      height: 100vh;
+      overflow: hidden;
     }
     .game-container {
       display: flex;
+      flex-direction: row;
       align-items: flex-start;
-      justify-content: center;
       gap: 20px;
-      margin-top: 10px;
-      flex-wrap: wrap;
-      max-width: 100%;
-    }
-    canvas {
-      background: linear-gradient(145deg, #0d1b2a, #1b263b);
-      border: 3px solid #415a77;
+      background: rgba(0,0,0,0.8);
+      padding: 20px;
       border-radius: 15px;
-      box-shadow: 0px 0px 25px rgba(0, 0, 0, 0.6),
-                  0px 0px 50px rgba(65, 90, 119, 0.4) inset;
-      display: block;
-      max-width: 100%;
-      height: auto;
-      touch-action: none; /* ✅ Prevents scroll during swipe */
+      box-shadow: 0 0 25px rgba(0,0,0,0.9);
+      position: relative;
     }
-    #ui {
-      margin-top: 15px;
-      text-align: center;
-    }
-    #score {
-      font-family: 'Press Start 2P', cursive;
-      font-size: 16px;
-      color: #212529;
-      background: rgba(255, 255, 255, 0.7);
-      padding: 5px 10px;
-      border-radius: 8px;
-      display: inline-block;
-      margin-bottom: 10px;
-    }
-    button {
-      background: #ffb703;
-      border: none;
-      padding: 10px 20px;
-      font-size: 16px;
-      margin: 5px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.2s ease-in-out, transform 0.15s ease-in-out;
-    }
-    button:hover {
-      background: #fb8500;
-      transform: scale(1.05);
-    }
-    .side-panel {
+    .sidebar {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 15px;
+      gap: 20px;
+      max-width: 200px;
     }
-    .side-box {
-      width: 180px;
-      font-family: 'Press Start 2P', cursive;
-      font-size: 10px;
-      background: rgba(255, 255, 255, 0.8);
-      color: #023047;
-      border: 2px solid #415a77;
-      border-radius: 12px;
-      padding: 10px;
-      text-align: left;
-      line-height: 1.5;
+    canvas {
+      background: #111;
+      border: 3px solid #fff;
+      box-shadow: 0 0 15px #00ffcc;
+      image-rendering: pixelated;
     }
-    .side-box h3 {
+    .score-board {
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    button {
+      background: #00ffcc;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 8px;
       font-size: 12px;
-      margin-bottom: 5px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button:hover {
+      background: #00cc99;
+    }
+    .rules {
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .tomato-man {
       text-align: center;
-      color: #fb8500;
-      text-shadow: 1px 1px 0px #023047;
     }
-    #tomatoMan {
-      width: 160px;
+    .tomato-man img {
+      width: 80px;
+      border-radius: 50%;
+    }
+    /* Fullscreen zoom mode */
+    .fullscreen-mode {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 9999;
+      background: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .fullscreen-mode canvas {
+      width: 100vw;
       height: auto;
-      border-radius: 12px;
-      border: 2px solid #415a77;
-      box-shadow: 0px 0px 12px rgba(0,0,0,0.4);
     }
-
-    /* 📱 Mobile Responsive */
     @media (max-width: 768px) {
+      body {
+        align-items: flex-start;
+      }
       .game-container {
         flex-direction: column;
         align-items: center;
-        gap: 15px;
+        height: 100vh;
+        overflow: auto;
       }
-
+      .sidebar {
+        max-width: none;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
       canvas {
-        width: 100vw;   /* Full width */
+        width: 100%;
         height: auto;
-        max-height: 70vh; /* Large playable area */
-      }
-
-      .side-box, .side-panel {
-        width: 90%;
-        text-align: center;
-        font-size: 12px;
-      }
-
-      #ui button {
-        font-size: 18px;
-        padding: 12px 24px;
-        width: 90%;
-        max-width: 250px;
-      }
-
-      #score {
-        font-size: 18px;
-        padding: 10px 15px;
       }
     }
   </style>
 </head>
 <body>
-  <img src="9YuEYF8-_400x400.jpg" alt="DataHaven Logo" id="logo">
-  <h1>🫎 DataHaven's Moosnake Game</h1>
-  <h2>BY: TOMATO MAN</h2>
-
   <div class="game-container">
-    <div class="side-box">
-      <h3>🎮 Controls</h3>
-      ↑ / W = Up<br>
-      ↓ / S = Down<br>
-      ← / A = Left<br>
-      → / D = Right<br>
-      👆 Swipe = Mobile
-    </div>
-
     <canvas id="gameCanvas" width="600" height="400"></canvas>
-
-    <div class="side-panel">
-      <div class="side-box">
-        <h3>📜 Rules</h3>
-        🥜 Eat acorns = +1<br>
-        🔑 Grab key = +10<br>
-        ❌ Don’t hit yourself<br>
-        ⏩ Snake speeds up slowly<br>
-        🌍 Wrap around edges
+    <div class="sidebar">
+      <div class="score-board">Score: <span id="score">0</span></div>
+      <div class="buttons">
+        <button onclick="startGame()">Start</button>
+        <button onclick="pauseGame()">Pause</button>
+        <button onclick="resumeGame()">Resume</button>
+        <button onclick="restartGame()">Restart</button>
+        <button onclick="toggleFullscreen()" class="fullscreen-btn">Fullscreen</button>
       </div>
-      <img src="Generated Image September 12, 2025 - 6_21PM.png" alt="Tomato Man" id="tomatoMan">
+      <div class="rules">
+        <strong>Rules:</strong><br>
+        - Arrow keys or swipe to move.<br>
+        - Collect acorns (+1).<br>
+        - Collect key (+10).<br>
+        - Avoid walls & yourself.<br>
+      </div>
+      <div class="tomato-man">
+        <img src="https://i.imgur.com/9V3X6rC.png" alt="Tomato Man">
+        <p>Tomato Man</p>
+      </div>
     </div>
-  </div>
-
-  <div id="ui">
-    <p id="score">Score: 0</p><br>
-    <button id="startBtn">Start Game</button>
-    <button id="pauseBtn" style="display:none;">Pause</button>
-    <button id="resumeBtn" style="display:none;">Resume</button>
-    <button id="restartBtn" style="display:none;">Restart</button>
   </div>
 
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
+    const scoreElement = document.getElementById("score");
 
-    const scoreEl = document.getElementById("score");
-    const startBtn = document.getElementById("startBtn");
-    const pauseBtn = document.getElementById("pauseBtn");
-    const resumeBtn = document.getElementById("resumeBtn");
-    const restartBtn = document.getElementById("restartBtn");
-
-    const gridSize = 25;
-    let cols = canvas.width / gridSize;
-    let rows = canvas.height / gridSize;
-
-    let snake, direction, nextDirection, food, score, gameInterval, gameRunning, speed;
-
-    // Images
-    const acorn = new Image();
-    acorn.src = "acorn.png";
+    const gridSize = 20;
+    let snake, direction, food, keyItem, score, speed, gameInterval;
+    let isPaused = false;
 
     const mooseHead = new Image();
-    mooseHead.src = "moose.png";
-
+    mooseHead.src = "https://i.imgur.com/SQJtU0T.png";
+    const acornImg = new Image();
+    acornImg.src = "https://i.imgur.com/n6b5y5o.png";
     const keyImg = new Image();
-    keyImg.src = "key.png";
+    keyImg.src = "https://i.imgur.com/ewHjdpG.png";
 
-    // Key mechanics
-    let key = null;
-    let keyVisible = false;
-    let keyTimer, keySpawnTimer;
-
-    // 📱 Responsive canvas size
-    function resizeCanvas() {
-      if (window.innerWidth < 768) {
-        // Fullscreen-ish for mobile
-        canvas.width = window.innerWidth;
-        canvas.height = Math.floor(window.innerHeight * 0.7);
-      } else {
-        // Fixed size for PC
-        canvas.width = 600;
-        canvas.height = 400;
-      }
-      cols = Math.floor(canvas.width / gridSize);
-      rows = Math.floor(canvas.height / gridSize);
-    }
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
-
-    function resetGame() {
-      snake = [{ x: 5, y: 5 }];
-      direction = { x: 1, y: 0 };
-      nextDirection = { x: 1, y: 0 };
+    function initGame() {
+      snake = [{x: 5, y: 5}];
+      direction = "RIGHT";
+      food = randomPosition();
+      keyItem = null;
       score = 0;
-      speed = 150;
-      scoreEl.textContent = "Score: " + score;
-      placeFood();
-      removeKey();
-      scheduleKey();
+      speed = 200;
+      updateScore();
     }
 
-    function placeFood() {
-      let valid = false;
-      while (!valid) {
-        food = { x: Math.floor(Math.random() * cols), y: Math.floor(Math.random() * rows) };
-        valid = !snake.some(seg => seg.x === food.x && seg.y === food.y);
+    function randomPosition() {
+      return {
+        x: Math.floor(Math.random() * (canvas.width / gridSize)),
+        y: Math.floor(Math.random() * (canvas.height / gridSize))
+      };
+    }
+
+    function draw() {
+      ctx.fillStyle = "#111";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // food
+      ctx.drawImage(acornImg, food.x * gridSize, food.y * gridSize, gridSize, gridSize);
+
+      // key
+      if (keyItem) {
+        ctx.drawImage(keyImg, keyItem.x * gridSize, keyItem.y * gridSize, gridSize, gridSize);
       }
-    }
 
-    function placeKey() {
-      let valid = false;
-      while (!valid) {
-        key = { x: Math.floor(Math.random() * cols), y: Math.floor(Math.random() * rows) };
-        valid = !snake.some(seg => seg.x === key.x && seg.y === key.y) &&
-                !(food.x === key.x && food.y === key.y);
-      }
-      keyVisible = true;
-      clearTimeout(keyTimer);
-      keyTimer = setTimeout(removeKey, 8000);
-    }
-
-    function removeKey() {
-      key = null;
-      keyVisible = false;
-    }
-
-    function scheduleKey() {
-      clearInterval(keySpawnTimer);
-      keySpawnTimer = setInterval(() => {
-        if (!keyVisible) placeKey();
-      }, 10000);
-    }
-
-    function drawSnake() {
+      // snake
       snake.forEach((segment, index) => {
         if (index === 0) {
-          drawMooseHead(segment.x, segment.y);
+          ctx.drawImage(mooseHead, segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
         } else {
-          ctx.fillStyle = "#219ebc";
+          ctx.fillStyle = "#0f0";
           ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize, gridSize);
         }
       });
     }
 
-    function drawMooseHead(x, y) {
-      const size = gridSize * 1.6;
-      const cx = x * gridSize + gridSize / 2;
-      const cy = y * gridSize + gridSize / 2;
-      const imageRotationOffset = Math.PI / 2;
-      const angle = Math.atan2(direction.y, direction.x) + imageRotationOffset;
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(angle);
-      ctx.drawImage(mooseHead, -size / 2, -size / 2, size, size);
-      ctx.restore();
-    }
-
-    function drawFood() {
-      ctx.drawImage(acorn, food.x * gridSize, food.y * gridSize, gridSize, gridSize);
-    }
-
-    function drawKey() {
-      if (keyVisible && key) {
-        const size = gridSize * 1.2;
-        ctx.drawImage(keyImg, key.x * gridSize, key.y * gridSize, size, size);
-      }
-    }
-
     function update() {
-      const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+      if (isPaused) return;
 
-      if (head.x < 0) head.x = cols - 1;
-      if (head.x >= cols) head.x = 0;
-      if (head.y < 0) head.y = rows - 1;
-      if (head.y >= rows) head.y = 0;
+      const head = {...snake[0]};
+      if (direction === "UP") head.y--;
+      if (direction === "DOWN") head.y++;
+      if (direction === "LEFT") head.x--;
+      if (direction === "RIGHT") head.x++;
 
+      // wrap edges
+      if (head.x < 0) head.x = canvas.width / gridSize - 1;
+      if (head.x >= canvas.width / gridSize) head.x = 0;
+      if (head.y < 0) head.y = canvas.height / gridSize - 1;
+      if (head.y >= canvas.height / gridSize) head.y = 0;
+
+      // collision
       if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
-        gameOver();
+        clearInterval(gameInterval);
+        alert("Game Over!");
         return;
       }
 
@@ -341,120 +219,93 @@
 
       if (head.x === food.x && head.y === food.y) {
         score++;
-        scoreEl.textContent = "Score: " + score;
-        placeFood();
-        speed = Math.max(80, 150 - score * 3);
+        updateScore();
+        food = randomPosition();
+        if (speed > 50) speed -= 5;
         clearInterval(gameInterval);
-        gameInterval = setInterval(gameLoop, speed);
-      } else if (keyVisible && key && head.x === key.x && head.y === key.y) {
+        gameInterval = setInterval(update, speed);
+      } else if (keyItem && head.x === keyItem.x && head.y === keyItem.y) {
         score += 10;
-        scoreEl.textContent = "Score: " + score;
-        removeKey();
+        updateScore();
+        keyItem = null;
       } else {
         snake.pop();
       }
 
-      direction = nextDirection;
-    }
-
-    function draw() {
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, "#0d1b2a");
-      gradient.addColorStop(1, "#1b263b");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      drawFood();
-      drawKey();
-      drawSnake();
-    }
-
-    function gameLoop() {
-      update();
       draw();
     }
 
+    function updateScore() {
+      scoreElement.textContent = score;
+    }
+
     function startGame() {
-      resetGame();
-      gameRunning = true;
-      startBtn.style.display = "none";
-      pauseBtn.style.display = "inline-block";
-      resumeBtn.style.display = "none";
-      restartBtn.style.display = "none";
       clearInterval(gameInterval);
-      gameInterval = setInterval(gameLoop, speed);
+      initGame();
+      gameInterval = setInterval(update, speed);
+      spawnKey();
     }
 
     function pauseGame() {
-      clearInterval(gameInterval);
-      gameRunning = false;
-      pauseBtn.style.display = "none";
-      resumeBtn.style.display = "inline-block";
+      isPaused = true;
     }
-
     function resumeGame() {
-      if (!gameRunning) {
-        gameRunning = true;
-        gameInterval = setInterval(gameLoop, speed);
-        pauseBtn.style.display = "inline-block";
-        resumeBtn.style.display = "none";
-      }
+      isPaused = false;
+    }
+    function restartGame() {
+      startGame();
     }
 
-    function gameOver() {
-      clearInterval(gameInterval);
-      gameRunning = false;
-      alert("Game Over!\nScore: " + score);
-      restartBtn.style.display = "inline-block";
-      pauseBtn.style.display = "none";
-      resumeBtn.style.display = "none";
+    function spawnKey() {
+      setInterval(() => {
+        keyItem = randomPosition();
+        setTimeout(() => {
+          keyItem = null;
+        }, 8000);
+      }, 10000);
     }
 
-    // Keyboard controls
-    document.addEventListener("keydown", (e) => {
-      const key = e.key.toLowerCase();
-      if ((key === "arrowup" || key === "w") && direction.y !== 1) nextDirection = { x: 0, y: -1 };
-      if ((key === "arrowdown" || key === "s") && direction.y !== -1) nextDirection = { x: 0, y: 1 };
-      if ((key === "arrowleft" || key === "a") && direction.x !== 1) nextDirection = { x: -1, y: 0 };
-      if ((key === "arrowright" || key === "d") && direction.x !== -1) nextDirection = { x: 1, y: 0 };
+    // controls
+    document.addEventListener("keydown", e => {
+      if (e.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+      if (e.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+      if (e.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+      if (e.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
     });
 
-    // ✅ Mobile swipe detection
-    let touchStartX = 0, touchStartY = 0;
-    let touchEndX = 0, touchEndY = 0;
-
-    canvas.addEventListener("touchstart", (e) => {
+    // swipe
+    let touchStartX, touchStartY;
+    canvas.addEventListener("touchstart", e => {
       const touch = e.touches[0];
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;
     });
-
-    canvas.addEventListener("touchend", (e) => {
+    canvas.addEventListener("touchend", e => {
       const touch = e.changedTouches[0];
-      touchEndX = touch.clientX;
-      touchEndY = touch.clientY;
-      handleSwipe();
+      const dx = touch.clientX - touchStartX;
+      const dy = touch.clientY - touchStartY;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 0 && direction !== "LEFT") direction = "RIGHT";
+        else if (dx < 0 && direction !== "RIGHT") direction = "LEFT";
+      } else {
+        if (dy > 0 && direction !== "UP") direction = "DOWN";
+        else if (dy < 0 && direction !== "DOWN") direction = "UP";
+      }
     });
 
-    function handleSwipe() {
-      const dx = touchEndX - touchStartX;
-      const dy = touchEndY - touchStartY;
-
-      if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 30 && direction.x !== -1) nextDirection = { x: 1, y: 0 }; // Right
-        if (dx < -30 && direction.x !== 1) nextDirection = { x: -1, y: 0 }; // Left
+    // fullscreen toggle
+    function toggleFullscreen() {
+      const gameContainer = document.querySelector('.game-container');
+      if (!document.fullscreenElement) {
+        gameContainer.requestFullscreen().catch(err => {
+          alert(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+        gameContainer.classList.add('fullscreen-mode');
       } else {
-        if (dy > 30 && direction.y !== -1) nextDirection = { x: 0, y: 1 }; // Down
-        if (dy < -30 && direction.y !== 1) nextDirection = { x: 0, y: -1 }; // Up
+        document.exitFullscreen();
+        gameContainer.classList.remove('fullscreen-mode');
       }
     }
-
-    // Buttons
-    startBtn.addEventListener("click", startGame);
-    pauseBtn.addEventListener("click", pauseGame);
-    resumeBtn.addEventListener("click", resumeGame);
-    restartBtn.addEventListener("click", startGame);
   </script>
 </body>
 </html>
-
