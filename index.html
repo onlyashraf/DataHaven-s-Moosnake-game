@@ -14,7 +14,7 @@
       font-family: Arial, sans-serif;
     }
     body {
-      background: url("better.png") no-repeat center center fixed;
+      background: url("flower background cropped.png") no-repeat center center fixed;
       background-size: cover;
       display: flex;
       flex-direction: column;
@@ -134,8 +134,9 @@
       }
 
       canvas {
-        width: 95vw;
+        width: 100vw;   /* Full width */
         height: auto;
+        max-height: 70vh; /* Large playable area */
       }
 
       .side-box, .side-panel {
@@ -230,14 +231,16 @@
     // 📱 Responsive canvas size
     function resizeCanvas() {
       if (window.innerWidth < 768) {
-        canvas.width = Math.floor(window.innerWidth * 0.9);
-        canvas.height = Math.floor(window.innerHeight * 0.5);
+        // Fullscreen-ish for mobile
+        canvas.width = window.innerWidth;
+        canvas.height = Math.floor(window.innerHeight * 0.7);
       } else {
+        // Fixed size for PC
         canvas.width = 600;
         canvas.height = 400;
       }
-      cols = canvas.width / gridSize;
-      rows = canvas.height / gridSize;
+      cols = Math.floor(canvas.width / gridSize);
+      rows = Math.floor(canvas.height / gridSize);
     }
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
@@ -344,7 +347,7 @@
         clearInterval(gameInterval);
         gameInterval = setInterval(gameLoop, speed);
       } else if (keyVisible && key && head.x === key.x && head.y === key.y) {
-        score += 10; // ✅ updated from 5 to 10
+        score += 10;
         scoreEl.textContent = "Score: " + score;
         removeKey();
       } else {
