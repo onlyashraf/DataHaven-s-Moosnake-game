@@ -95,6 +95,12 @@
       background: transparent; /* wrapper already has gradient */
     }
 
+    /* NEW: Add a visible border for fullscreen mobile */
+    .game-wrapper.fullscreen-mobile canvas {
+        border: 5px solid #ffb703 !important;
+    }
+
+
     /* Score overlay inside wrapper (so it stays visible in fullscreen) */
     #scoreOverlay {
       position: absolute;
@@ -217,7 +223,6 @@
       👆 Swipe = Mobile
     </div>
 
-    <!-- WRAPPER: contains canvas + score overlay. We requestFullscreen() on this wrapper. -->
     <div id="gameWrapper" class="game-wrapper" style="width:600px;height:400px;">
       <canvas id="gameCanvas" width="600" height="400"></canvas>
       <div id="scoreOverlay"><div id="score">Score: 0</div></div>
@@ -237,7 +242,6 @@
   </div>
 
   <div id="ui">
-    <!-- Score moved into wrapper, keep just buttons here -->
     <button id="startBtn">Start Game</button>
     <button id="pauseBtn" style="display:none;">Pause</button>
     <button id="resumeBtn" style="display:none;">Resume</button>
@@ -595,8 +599,13 @@
       // Force canvas/wrapper sizing update
       resizeCanvas();
 
-      // remove rounded corners on canvas when fullscreen
+      // NEW: Force border and remove rounded corners in fullscreen
       canvas.style.borderRadius = (fullscreen ? "0" : "15px");
+      if (fullscreen && !isMobile()) {
+          canvas.style.border = "3px solid #415a77";
+      } else if (!fullscreen) {
+          canvas.style.border = "3px solid #415a77";
+      }
     });
 
     // Wire buttons
