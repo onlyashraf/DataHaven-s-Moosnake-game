@@ -62,7 +62,7 @@
       display: block;
       max-width: 100%;
       height: auto;
-      touch-action: none; /* ✅ Prevents scroll during swipe */
+      touch-action: none;
     }
     #ui {
       margin-top: 15px;
@@ -124,33 +124,27 @@
       border: 2px solid #415a77;
       box-shadow: 0px 0px 12px rgba(0,0,0,0.4);
     }
-
-    /* 📱 Mobile Responsive */
     @media (max-width: 768px) {
       .game-container {
         flex-direction: column;
         align-items: center;
         gap: 15px;
       }
-
       canvas {
         width: 95vw;
         height: auto;
       }
-
       .side-box, .side-panel {
         width: 90%;
         text-align: center;
         font-size: 12px;
       }
-
       #ui button {
         font-size: 18px;
         padding: 12px 24px;
         width: 90%;
         max-width: 250px;
       }
-
       #score {
         font-size: 18px;
         padding: 10px 15px;
@@ -212,7 +206,6 @@
 
     let snake, direction, nextDirection, food, score, gameInterval, gameRunning, speed;
 
-    // Images
     const acorn = new Image();
     acorn.src = "acorn.png";
 
@@ -222,12 +215,10 @@
     const keyImg = new Image();
     keyImg.src = "key.png";
 
-    // Key mechanics
     let key = null;
     let keyVisible = false;
     let keyTimer, keySpawnTimer;
 
-    // 📱 Responsive canvas size
     function resizeCanvas() {
       if (window.innerWidth < 768) {
         canvas.width = Math.floor(window.innerWidth * 0.9);
@@ -271,7 +262,10 @@
       }
       keyVisible = true;
       clearTimeout(keyTimer);
-      keyTimer = setTimeout(removeKey, 8000);
+      keyTimer = setTimeout(() => {
+        removeKey();
+        scheduleKey();
+      }, 8000);
     }
 
     function removeKey() {
@@ -280,9 +274,9 @@
     }
 
     function scheduleKey() {
-      clearInterval(keySpawnTimer);
-      keySpawnTimer = setInterval(() => {
-        if (!keyVisible) placeKey();
+      clearTimeout(keySpawnTimer);
+      keySpawnTimer = setTimeout(() => {
+        placeKey();
       }, 10000);
     }
 
@@ -301,8 +295,11 @@
       const size = gridSize * 1.6;
       const cx = x * gridSize + gridSize / 2;
       const cy = y * gridSize + gridSize / 2;
-      const imageRotationOffset = Math.PI / 2;
-      const angle = Math.atan2(direction.y, direction.x) + imageRotationOffset;
+      let angle = 0;
+      if (direction.x === 1) angle = 0;
+      if (direction.x === -1) angle = Math.PI;
+      if (direction.y === -1) angle = -Math.PI / 2;
+      if (direction.y === 1) angle = Math.PI / 2;
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(angle);
@@ -340,11 +337,11 @@
         score++;
         scoreEl.textContent = "Score: " + score;
         placeFood();
-        speed = Math.max(80, 150 - score * 3);
+        speed = Math.max(70, 150 * Math.pow(0.97, score));
         clearInterval(gameInterval);
         gameInterval = setInterval(gameLoop, speed);
       } else if (keyVisible && key && head.x === key.x && head.y === key.y) {
-        score += 10; // ✅ updated from 5 to 10
+        score += 10;
         scoreEl.textContent = "Score: " + score;
         removeKey();
       } else {
@@ -360,7 +357,6 @@
       gradient.addColorStop(1, "#1b263b");
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-
       drawFood();
       drawKey();
       drawSnake();
@@ -407,7 +403,6 @@
       resumeBtn.style.display = "none";
     }
 
-    // Keyboard controls
     document.addEventListener("keydown", (e) => {
       const key = e.key.toLowerCase();
       if ((key === "arrowup" || key === "w") && direction.y !== 1) nextDirection = { x: 0, y: -1 };
@@ -416,7 +411,6 @@
       if ((key === "arrowright" || key === "d") && direction.x !== -1) nextDirection = { x: 1, y: 0 };
     });
 
-    // ✅ Mobile swipe detection
     let touchStartX = 0, touchStartY = 0;
     let touchEndX = 0, touchEndY = 0;
 
@@ -436,17 +430,15 @@
     function handleSwipe() {
       const dx = touchEndX - touchStartX;
       const dy = touchEndY - touchStartY;
-
       if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 30 && direction.x !== -1) nextDirection = { x: 1, y: 0 }; // Right
-        if (dx < -30 && direction.x !== 1) nextDirection = { x: -1, y: 0 }; // Left
+        if (dx > 30 && direction.x !== -1) nextDirection = { x: 1, y: 0 };
+        if (dx < -30 && direction.x !== 1) nextDirection = { x: -1, y: 0 };
       } else {
-        if (dy > 30 && direction.y !== -1) nextDirection = { x: 0, y: 1 }; // Down
-        if (dy < -30 && direction.y !== 1) nextDirection = { x: 0, y: -1 }; // Up
+        if (dy > 30 && direction.y !== -1) nextDirection = { x: 0, y: 1 };
+        if (dy < -30 && direction.y !== 1) nextDirection = { x: 0, y: -1 };
       }
     }
 
-    // Buttons
     startBtn.addEventListener("click", startGame);
     pauseBtn.addEventListener("click", pauseGame);
     resumeBtn.addEventListener("click", resumeGame);
