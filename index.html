@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Moosnake Game with Key Power-Up</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -14,7 +15,7 @@
       font-family: Arial, sans-serif;
     }
     body {
-      background: url("better.png") no-repeat center center fixed;
+      background-color: #2b2d42;
       background-size: cover;
       display: flex;
       flex-direction: column;
@@ -67,16 +68,6 @@
     #ui {
       margin-top: 15px;
       text-align: center;
-    }
-    #score {
-      font-family: 'Press Start 2P', cursive;
-      font-size: 16px;
-      color: #212529;
-      background: rgba(255, 255, 255, 0.7);
-      padding: 5px 10px;
-      border-radius: 8px;
-      display: inline-block;
-      margin-bottom: 10px;
     }
     button {
       background: #ffb703;
@@ -154,7 +145,7 @@
   </style>
 </head>
 <body>
-  <img src="9YuEYF8-_400x400.jpg" alt="DataHaven Logo" id="logo">
+  <img src="https://placehold.co/100x100/9YuEYF8?text=DH" alt="DataHaven Logo" id="logo">
   <h1>🫎 DataHaven's Moosnake Game</h1>
   <h2>BY: TOMATO MAN</h2>
 
@@ -179,12 +170,12 @@
         ⏩ Snake speeds up slowly<br>
         🌍 Wrap around edges
       </div>
-      <img src="Generated Image September 12, 2025 - 6_21PM.png" alt="Tomato Man" id="tomatoMan">
+      <img src="https://placehold.co/160x160/FFA07A/FFFFFF?text=Tomato+Man" alt="Tomato Man" id="tomatoMan">
     </div>
   </div>
 
   <div id="ui">
-    <p id="score">Score: 0</p><br>
+    <!-- Score is now drawn directly on the canvas -->
     <button id="startBtn">Start Game</button>
     <button id="pauseBtn" style="display:none;">Pause</button>
     <button id="resumeBtn" style="display:none;">Resume</button>
@@ -193,10 +184,21 @@
   </div>
 
   <script>
+    // Placeholder image URLs
+    const imagePlaceholderUrl = "https://placehold.co/";
+    const logoPlaceholder = imagePlaceholderUrl + "100x100/9YuEYF8/FFFFFF?text=DH";
+    const tomatoManPlaceholder = imagePlaceholderUrl + "160x160/FFA07A/FFFFFF?text=Tomato+Man";
+    const acornPlaceholder = imagePlaceholderUrl + "25x25/964B00/FFFFFF?text=🥜";
+    const moosePlaceholder = imagePlaceholderUrl + "25x25/8B4513/FFFFFF?text=🫎";
+    const keyPlaceholder = imagePlaceholderUrl + "25x25/FFD700/000000?text=🔑";
+
+    // Set fallback image sources
+    document.getElementById("logo").src = logoPlaceholder;
+    document.getElementById("tomatoMan").src = tomatoManPlaceholder;
+
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    const scoreEl = document.getElementById("score");
     const startBtn = document.getElementById("startBtn");
     const pauseBtn = document.getElementById("pauseBtn");
     const resumeBtn = document.getElementById("resumeBtn");
@@ -212,16 +214,38 @@
     let snake, direction, nextDirection, food, score, gameInterval, gameRunning, speed;
 
     const acorn = new Image();
-    acorn.src = "acorn.png";
+    acorn.src = acornPlaceholder;
     const mooseHead = new Image();
-    mooseHead.src = "moose.png";
+    mooseHead.src = moosePlaceholder;
     const keyImg = new Image();
-    keyImg.src = "key.png";
+    keyImg.src = keyPlaceholder;
 
     let key = null;
     let keyVisible = false;
     let keyTimer, keySpawnTimer;
     let fullscreen = false;
+
+    // A simple custom modal for alerts
+    function showCustomAlert(message) {
+      const modal = document.createElement('div');
+      modal.style.position = 'fixed';
+      modal.style.top = '50%';
+      modal.style.left = '50%';
+      modal.style.transform = 'translate(-50%, -50%)';
+      modal.style.padding = '20px';
+      modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+      modal.style.color = '#fff';
+      modal.style.borderRadius = '10px';
+      modal.style.fontFamily = "'Press Start 2P', cursive";
+      modal.style.fontSize = '14px';
+      modal.style.textAlign = 'center';
+      modal.style.zIndex = '1000';
+      modal.innerHTML = `
+        <p>${message}</p>
+        <button onclick="this.parentNode.remove()" style="margin-top: 15px;">OK</button>
+      `;
+      document.body.appendChild(modal);
+    }
 
     function resizeCanvas() {
       if (fullscreen) {
@@ -235,8 +259,8 @@
         canvas.height = 400;
       }
       gridSize = Math.floor(Math.min(canvas.width / baseCols, canvas.height / baseRows));
-      cols = baseCols;
-      rows = baseRows;
+      cols = Math.floor(canvas.width / gridSize);
+      rows = Math.floor(canvas.height / gridSize);
     }
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
@@ -247,7 +271,6 @@
       nextDirection = { x: 1, y: 0 };
       score = 0;
       speed = 150;
-      scoreEl.textContent = "Score: " + score;
       placeFood();
       removeKey();
       scheduleKey();
@@ -284,6 +307,16 @@
       keySpawnTimer = setTimeout(() => {
         if (!keyVisible) placeKey();
       }, 10000);
+    }
+
+    function drawGrid() {
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < cols; i++) {
+            for (let j = 0; j < rows; j++) {
+                ctx.strokeRect(i * gridSize, j * gridSize, gridSize, gridSize);
+            }
+        }
     }
 
     function drawSnake() {
@@ -337,14 +370,12 @@
 
       if (head.x === food.x && head.y === food.y) {
         score++;
-        scoreEl.textContent = "Score: " + score;
         placeFood();
         speed = Math.max(100, 150 * Math.pow(0.99, score));
         clearInterval(gameInterval);
         gameInterval = setInterval(gameLoop, speed);
       } else if (keyVisible && key && head.x === key.x && head.y === key.y) {
         score += 10;
-        scoreEl.textContent = "Score: " + score;
         removeKey();
       } else {
         snake.pop();
@@ -360,9 +391,15 @@
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      drawGrid();
       drawFood();
       drawKey();
       drawSnake();
+
+      ctx.fillStyle = "#212529";
+      ctx.font = "16px 'Press Start 2P', cursive";
+      ctx.textAlign = "right";
+      ctx.fillText(`Score: ${score}`, canvas.width - 20, 30);
     }
 
     function gameLoop() {
@@ -400,7 +437,7 @@
     function gameOver() {
       clearInterval(gameInterval);
       gameRunning = false;
-      alert("Game Over!\nScore: " + score);
+      showCustomAlert("Game Over!\nScore: " + score);
       restartBtn.style.display = "inline-block";
       pauseBtn.style.display = "none";
       resumeBtn.style.display = "none";
@@ -418,12 +455,14 @@
     let touchEndX = 0, touchEndY = 0;
 
     canvas.addEventListener("touchstart", (e) => {
+      e.preventDefault();
       const touch = e.touches[0];
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;
     });
 
     canvas.addEventListener("touchend", (e) => {
+      e.preventDefault();
       const touch = e.changedTouches[0];
       touchEndX = touch.clientX;
       touchEndY = touch.clientY;
@@ -472,7 +511,10 @@
       fullscreen = !!document.fullscreenElement;
       resizeCanvas();
       document.getElementById("ui").style.display = fullscreen ? "none" : "block";
-      document.querySelector(".side-panel").style.display = fullscreen ? "none" : "flex";
+      const sidePanel = document.querySelector(".side-panel");
+      if (sidePanel) {
+        sidePanel.style.display = fullscreen ? "none" : "flex";
+      }
     });
 
     startBtn.addEventListener("click", startGame);
@@ -482,4 +524,3 @@
   </script>
 </body>
 </html>
-
