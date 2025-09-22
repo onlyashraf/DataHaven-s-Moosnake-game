@@ -64,9 +64,20 @@
       height: auto;
       touch-action: none;
     }
+    /* fullscreen mobile fix */
+    .fullscreen-mobile {
+      background: #0d1b2a;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
     #ui {
       margin-top: 15px;
       text-align: center;
+      z-index: 2;
+      position: relative;
     }
     #score {
       font-family: 'Press Start 2P', cursive;
@@ -77,20 +88,6 @@
       border-radius: 8px;
       display: inline-block;
       margin-bottom: 10px;
-    }
-    #fullscreenScore {
-      position: fixed;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: 'Press Start 2P', cursive;
-      font-size: 20px;
-      color: #ffb703;
-      background: rgba(0,0,0,0.6);
-      padding: 6px 12px;
-      border-radius: 8px;
-      z-index: 9999;
-      display: none;
     }
     button {
       background: #ffb703;
@@ -206,14 +203,11 @@
     <button id="fullscreenBtn">Fullscreen</button>
   </div>
 
-  <p id="fullscreenScore">Score: 0</p>
-
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
     const scoreEl = document.getElementById("score");
-    const fullscreenScoreEl = document.getElementById("fullscreenScore");
     const startBtn = document.getElementById("startBtn");
     const pauseBtn = document.getElementById("pauseBtn");
     const resumeBtn = document.getElementById("resumeBtn");
@@ -264,15 +258,10 @@
       nextDirection = { x: 1, y: 0 };
       score = 0;
       speed = 150;
-      updateScore();
+      scoreEl.textContent = "Score: " + score;
       placeFood();
       removeKey();
       scheduleKey();
-    }
-
-    function updateScore() {
-      scoreEl.textContent = "Score: " + score;
-      fullscreenScoreEl.textContent = "Score: " + score;
     }
 
     function placeFood() {
@@ -359,14 +348,14 @@
 
       if (head.x === food.x && head.y === food.y) {
         score++;
-        updateScore();
+        scoreEl.textContent = "Score: " + score;
         placeFood();
         speed = Math.max(100, 150 * Math.pow(0.99, score));
         clearInterval(gameInterval);
         gameInterval = setInterval(gameLoop, speed);
       } else if (keyVisible && key && head.x === key.x && head.y === key.y) {
         score += 10;
-        updateScore();
+        scoreEl.textContent = "Score: " + score;
         removeKey();
       } else {
         snake.pop();
@@ -490,17 +479,28 @@
       }
     });
 
+    function isMobile() {
+      return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    }
+
     document.addEventListener("fullscreenchange", () => {
       fullscreen = !!document.fullscreenElement;
       resizeCanvas();
-      if (fullscreen) {
-        document.getElementById("ui").style.display = "none";
-        document.querySelector(".side-panel").style.display = "none";
-        fullscreenScoreEl.style.display = "block";
+
+      // hide side panel in fullscreen
+      document.querySelector(".side-panel").style.display = fullscreen ? "none" : "flex";
+
+      // keep score visible, hide buttons in fullscreen
+      scoreEl.style.display = "inline-block";
+      [...document.querySelectorAll("#ui button")].forEach(btn => {
+        btn.style.display = fullscreen ? "none" : "";
+      });
+
+      // mobile fullscreen fix
+      if (fullscreen && isMobile()) {
+        canvas.classList.add("fullscreen-mobile");
       } else {
-        document.getElementById("ui").style.display = "block";
-        document.querySelector(".side-panel").style.display = "flex";
-        fullscreenScoreEl.style.display = "none";
+        canvas.classList.remove("fullscreen-mobile");
       }
     });
 
