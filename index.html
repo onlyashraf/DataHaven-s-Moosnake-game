@@ -118,11 +118,31 @@
       text-shadow: 1px 1px 0px #023047;
     }
     #tomatoMan {
-      width: 160px;
+      display: block;
+      margin: 10px auto 0 auto;
+      width: 100%;
+      max-width: 140px;
       height: auto;
       border-radius: 12px;
       border: 2px solid #415a77;
       box-shadow: 0px 0px 12px rgba(0,0,0,0.4);
+    }
+
+    /* 🔥 Fullscreen score overlay */
+    #fullscreenScore {
+      position: fixed;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 18px;
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 6px 12px;
+      border-radius: 8px;
+      z-index: 9999;
+      pointer-events: none;
+      display: none;
     }
 
     @media (max-width: 768px) {
@@ -178,8 +198,9 @@
         ❌ Don’t hit yourself<br>
         ⏩ Snake speeds up slowly<br>
         🌍 Wrap around edges
+        <br><br>
+        <img src="Generated Image September 12, 2025 - 6_21PM.png" alt="Tomato Man" id="tomatoMan">
       </div>
-      <img src="Generated Image September 12, 2025 - 6_21PM.png" alt="Tomato Man" id="tomatoMan">
     </div>
   </div>
 
@@ -192,11 +213,15 @@
     <button id="fullscreenBtn">Fullscreen</button>
   </div>
 
+  <!-- 🔥 Fullscreen Score Overlay -->
+  <div id="fullscreenScore">Score: 0</div>
+
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
     const scoreEl = document.getElementById("score");
+    const fullscreenScore = document.getElementById("fullscreenScore");
     const startBtn = document.getElementById("startBtn");
     const pauseBtn = document.getElementById("pauseBtn");
     const resumeBtn = document.getElementById("resumeBtn");
@@ -248,6 +273,7 @@
       score = 0;
       speed = 150;
       scoreEl.textContent = "Score: " + score;
+      fullscreenScore.textContent = "Score: " + score;
       placeFood();
       removeKey();
       scheduleKey();
@@ -338,6 +364,7 @@
       if (head.x === food.x && head.y === food.y) {
         score++;
         scoreEl.textContent = "Score: " + score;
+        fullscreenScore.textContent = "Score: " + score;
         placeFood();
         speed = Math.max(100, 150 * Math.pow(0.99, score));
         clearInterval(gameInterval);
@@ -345,6 +372,7 @@
       } else if (keyVisible && key && head.x === key.x && head.y === key.y) {
         score += 10;
         scoreEl.textContent = "Score: " + score;
+        fullscreenScore.textContent = "Score: " + score;
         removeKey();
       } else {
         snake.pop();
@@ -473,13 +501,9 @@
       resizeCanvas();
       document.getElementById("ui").style.display = fullscreen ? "none" : "block";
       document.querySelector(".side-panel").style.display = fullscreen ? "none" : "flex";
+      // 🔥 toggle overlay
+      fullscreenScore.style.display = fullscreen ? "block" : "none";
     });
 
     startBtn.addEventListener("click", startGame);
-    pauseBtn.addEventListener("click", pauseGame);
-    resumeBtn.addEventListener("click", resumeGame);
-    restartBtn.addEventListener("click", startGame);
-  </script>
-</body>
-</html>
-
+    pauseBtn.addEventListener
