@@ -67,6 +67,10 @@
     #ui {
       margin-top: 15px;
       text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
     }
     #score {
       font-family: 'Press Start 2P', cursive;
@@ -76,7 +80,6 @@
       padding: 5px 10px;
       border-radius: 8px;
       display: inline-block;
-      margin-bottom: 10px;
     }
     button {
       background: #ffb703;
@@ -151,6 +154,18 @@
         padding: 10px 15px;
       }
     }
+
+    /* Fullscreen layout: put score + start beside canvas */
+    .fullscreen-ui {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      z-index: 999;
+    }
   </style>
 </head>
 <body>
@@ -184,7 +199,7 @@
   </div>
 
   <div id="ui">
-    <p id="score">Score: 0</p><br>
+    <p id="score">Score: 0</p>
     <button id="startBtn">Start Game</button>
     <button id="pauseBtn" style="display:none;">Pause</button>
     <button id="resumeBtn" style="display:none;">Resume</button>
@@ -202,12 +217,11 @@
     const resumeBtn = document.getElementById("resumeBtn");
     const restartBtn = document.getElementById("restartBtn");
     const fullscreenBtn = document.getElementById("fullscreenBtn");
+    const ui = document.getElementById("ui");
 
-    let gridSize = 25;
+    const gridSize = 25;
     let cols = canvas.width / gridSize;
     let rows = canvas.height / gridSize;
-    const baseCols = cols;
-    const baseRows = rows;
 
     let snake, direction, nextDirection, food, score, gameInterval, gameRunning, speed;
 
@@ -221,10 +235,9 @@
     let key = null;
     let keyVisible = false;
     let keyTimer, keySpawnTimer;
-    let fullscreen = false;
 
     function resizeCanvas() {
-      if (fullscreen) {
+      if (document.fullscreenElement) {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
       } else if (window.innerWidth < 768) {
@@ -234,9 +247,8 @@
         canvas.width = 600;
         canvas.height = 400;
       }
-      gridSize = Math.floor(Math.min(canvas.width / baseCols, canvas.height / baseRows));
-      cols = baseCols;
-      rows = baseRows;
+      cols = canvas.width / gridSize;
+      rows = canvas.height / gridSize;
     }
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
@@ -443,36 +455,15 @@
       }
     }
 
-    // Fullscreen handling
-    function enterFullscreen() {
-      if (canvas.requestFullscreen) {
-        canvas.requestFullscreen();
-      } else if (canvas.webkitRequestFullscreen) {
-        canvas.webkitRequestFullscreen();
-      } else if (canvas.msRequestFullscreen) {
-        canvas.msRequestFullscreen();
-      }
-    }
-
-    function exitFullscreen() {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-    }
-
+    // fullscreen handling
     fullscreenBtn.addEventListener("click", () => {
-      if (!fullscreen) {
-        enterFullscreen();
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        ui.classList.add("fullscreen-ui");
       } else {
-        exitFullscreen();
+        document.exitFullscreen();
+        ui.classList.remove("fullscreen-ui");
       }
-    });
-
-    document.addEventListener("fullscreenchange", () => {
-      fullscreen = !!document.fullscreenElement;
-      resizeCanvas();
-      document.getElementById("ui").style.display = fullscreen ? "none" : "block";
-      document.querySelector(".side-panel").style.display = fullscreen ? "none" : "flex";
     });
 
     startBtn.addEventListener("click", startGame);
